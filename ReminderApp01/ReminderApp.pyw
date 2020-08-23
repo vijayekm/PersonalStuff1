@@ -4,7 +4,11 @@ import threading
 from datetime import datetime
 import logging
 import sys
+import pyttsx3
+
 import ReminderAppGui
+
+POLL_INTERVAL=3
 
 format = "%(asctime)s: %(message)s"
 LOG_FILENAME = sys.argv[0] + datetime.now().strftime('_%H_%M_%S_%d_%m_%Y.log')
@@ -26,7 +30,6 @@ shuttingDown = False
 app = None
 window = None
 
-import pyttsx3
 
 stop_voice = False
 vt_running = False
@@ -80,6 +83,7 @@ class OneReminder:
 
         self.time = datetime(year,month,day,int(hour),int(min) );
         self.msg = msg
+        self.hasReminded = False
 
 def GetReminderKey(rem):
     return rem.at
@@ -101,7 +105,7 @@ class ReminderManager():
         ReminderManager.reminders.sort( key=GetReminderKey )
 
     @staticmethod
-    def GetNextSleepableReminder():
+    def getNextSleepableReminder():
         #return 4,OneReminder("11:21","Test Message");
 
         ReminderManager.prepareData();
@@ -109,11 +113,18 @@ class ReminderManager():
         now = datetime.now()
 
         for x in ReminderManager.reminders:
+
             if x.time > now:
                 wait_time = x.time - now
                 return wait_time.seconds, x
+            elif x.hasReminded == False:
+                return 0, x
 
         return None, None
+
+    @staticmethod
+    def markAsReminded(reminder):
+        reminder.hasReminded = True
 
 
 def FillGui():
@@ -122,6 +133,8 @@ def FillGui():
         window.m_remindersGrid.SetCellValue(i,0,rem.at )
         window.m_remindersGrid.SetCellValue(i,1,rem.msg )
         i+=1;
+
+    window.Refresh()
 
 
 def LoadData():
@@ -144,31 +157,41 @@ def guiMain():
     window = ReminderAppGui.ReminderAppFrame(None)
     window.SetIcon(wx.Icon("circle.png"))
     window.Show(True)
-
     app.MainLoop()
 
     return 1
 
+def doOnePollingSleep():
+    time.sleep(POLL_INTERVAL)
 
 def processReminders():
     global shuttingDown, stop_voice, voice_message
 
     while shuttingDown == False:
-        sec,reminder = ReminderManager.GetNextSleepableReminder()
 
-        if sec is not None and reminder is not None:
-            logging.info("Sleeping for "+str(sec) )
-            time.sleep(sec)
+        sec,reminder = ReminderManager.getNextSleepableReminder()
 
-            dialog = wx.MessageDialog(None, "Time for "+reminder.msg,"Reminder", wx.OK)
-
-            voice_message = reminder.msg
-            dialog.ShowModal()
-            dialog.Destroy()
-            voice_message = None
-        else:
+        if sec is None or reminder is None:
             logging.debug("Sleeping for next iter")
-            time.sleep(10)
+            doOnePollingSleep()
+            continue
+
+        if(sec > POLL_INTERVAL) :
+            logging.debug("Sleeping for next iter")
+            doOnePollingSleep()
+            continue;
+
+        logging.info("Sleeping for "+str(sec) )
+        time.sleep(sec)
+
+        dialog = wx.MessageDialog(None, "Time for "+reminder.msg,"Reminder", wx.OK)
+
+        voice_message = reminder.msg
+        dialog.ShowModal()
+        dialog.Destroy()
+        voice_message = None
+
+        ReminderManager.markAsReminded(reminder);
 
 def daemonMain() :
     LoadData();
