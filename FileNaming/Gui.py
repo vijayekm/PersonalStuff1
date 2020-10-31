@@ -23,8 +23,15 @@ class FileNamingDlg ( wx.Dialog ):
 
 		TopVertical = wx.BoxSizer( wx.HORIZONTAL )
 
-		self.m_treeCtrl = wx.TreeCtrl( self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TR_DEFAULT_STYLE )
-		TopVertical.Add( self.m_treeCtrl, 0, wx.ALL, 5 )
+		bsizer4Tree = wx.BoxSizer( wx.HORIZONTAL )
+
+		self.treeDirCtrl = wx.GenericDirCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TR_DEFAULT_STYLE, wx.EmptyString, 0 )
+
+		self.treeDirCtrl.ShowHidden( False )
+		bsizer4Tree.Add( self.treeDirCtrl, 1, wx.ALL|wx.EXPAND, 5 )
+
+
+		TopVertical.Add( bsizer4Tree, 1, wx.EXPAND|wx.FIXED_MINSIZE, 5 )
 
 		RightSideHorizontal = wx.BoxSizer( wx.VERTICAL )
 
@@ -35,8 +42,8 @@ class FileNamingDlg ( wx.Dialog ):
 
 		DirSelection.Add( self.m_staticSelectDir, 0, wx.ALL, 5 )
 
-		self.m_txtDir = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		DirSelection.Add( self.m_txtDir, 0, wx.ALL, 5 )
+		self.txtDirCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		DirSelection.Add( self.txtDirCtrl, 0, wx.ALL, 5 )
 
 		self.m_btnOpenDir = wx.Button( self, wx.ID_ANY, u"&Open Dir", wx.DefaultPosition, wx.DefaultSize, 0 )
 		DirSelection.Add( self.m_btnOpenDir, 0, wx.ALL, 5 )
@@ -45,58 +52,63 @@ class FileNamingDlg ( wx.Dialog ):
 		DirSelection.Add( self.m_btnCollectFiles, 0, wx.ALL, 5 )
 
 
-		RightSideHorizontal.Add( DirSelection, 1, wx.ALL, 5 )
+		RightSideHorizontal.Add( DirSelection, 0, wx.ALL, 5 )
 
 		self.m_lblCurrFN = wx.StaticText( self, wx.ID_ANY, u"&Current File Name", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_lblCurrFN.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.m_lblCurrFN, 0, wx.ALL, 5 )
 
-		self.m_txtCtrlCurrentFileName = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		RightSideHorizontal.Add( self.m_txtCtrlCurrentFileName, 0, wx.ALL|wx.EXPAND, 5 )
+		self.txtFileNameCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		RightSideHorizontal.Add( self.txtFileNameCtrl, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_lblNumber = wx.StaticText( self, wx.ID_ANY, u"N&umber", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_lblNumber.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.m_lblNumber, 0, wx.ALL, 5 )
 
-		self.m_txtCtrlNumber = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		RightSideHorizontal.Add( self.m_txtCtrlNumber, 0, wx.ALL|wx.EXPAND, 5 )
+		self.txtNumCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		RightSideHorizontal.Add( self.txtNumCtrl, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_lblNamePart = wx.StaticText( self, wx.ID_ANY, u"&Name Part", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_lblNamePart.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.m_lblNamePart, 0, wx.ALL, 5 )
 
-		self.m_txtCtrlNamePart = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE )
-		RightSideHorizontal.Add( self.m_txtCtrlNamePart, 0, wx.ALL|wx.EXPAND, 5 )
+		self.txtNamePartCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE )
+		RightSideHorizontal.Add( self.txtNamePartCtrl, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_lblEdition = wx.StaticText( self, wx.ID_ANY, u"&Edition", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_lblEdition.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.m_lblEdition, 0, wx.ALL, 5 )
 
-		self.m_txtCtrlEdition = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		RightSideHorizontal.Add( self.m_txtCtrlEdition, 0, wx.ALL|wx.EXPAND, 5 )
+		self.txtEditionCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		RightSideHorizontal.Add( self.txtEditionCtrl, 0, wx.ALL|wx.EXPAND, 5 )
 
 		self.m_lblDate = wx.StaticText( self, wx.ID_ANY, u"&Date", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_lblDate.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.m_lblDate, 0, wx.ALL, 5 )
 
-		self.m_txtCtrlDate = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
-		RightSideHorizontal.Add( self.m_txtCtrlDate, 0, wx.ALL|wx.EXPAND, 5 )
+		self.txtDateCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
+		RightSideHorizontal.Add( self.txtDateCtrl, 0, wx.ALL|wx.EXPAND, 5 )
+
+		self.lblExt = wx.StaticText( self, wx.ID_ANY, u"MyLabel", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.lblExt.Wrap( -1 )
+
+		RightSideHorizontal.Add( self.lblExt, 0, wx.ALL, 5 )
 
 		self.m_lblNewName = wx.StaticText( self, wx.ID_ANY, u"New FileName", wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.m_lblNewName.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.m_lblNewName, 0, wx.ALL, 5 )
 
-		self.m_txtCtrlNewName = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE )
-		RightSideHorizontal.Add( self.m_txtCtrlNewName, 0, wx.ALL|wx.EXPAND, 5 )
+		self.lblNewFileName = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE|wx.TE_READONLY )
+		RightSideHorizontal.Add( self.lblNewFileName, 0, wx.ALL|wx.EXPAND, 5 )
 
 
-		TopVertical.Add( RightSideHorizontal, 1, wx.EXPAND, 5 )
+		TopVertical.Add( RightSideHorizontal, 4, wx.EXPAND, 5 )
 
 
 		self.SetSizer( TopVertical )
