@@ -19,12 +19,16 @@ ID_SAVE	 = 5
 ID_OPEN	 = 6
 ID_CLEAN   = 7
 ID_FORMAT_NUM  = 8
+ID_DOTIFY = 9
 
 DEFAULT_DIR = "C:\\COL\\"
 
 
 TEMP_DIR_EXT="tmp_1"
 TEMP_DIR=TEMP_DIR_EXT
+
+ELIM_CONF_FILE="strelem.conf"
+g_elem_lines = []
 
 format = "%(asctime)s: %(message)s"
 LOG_FILENAME = sys.argv[0] + datetime.now().strftime('_%H_%M_%S_%d_%m_%Y.log')
@@ -33,7 +37,6 @@ LOG_FILENAME = sys.argv[0] + datetime.now().strftime('_%H_%M_%S_%d_%m_%Y.log')
 logging.basicConfig(format=format, level=logging.DEBUG, datefmt="%H:%M:%S")
 
 
-TEMP_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),TEMP_DIR_EXT)
 
 
 class FNException(Exception):
@@ -109,7 +112,7 @@ class FileNaming(FileNamingDlg):
 		if self.lblNewFileName :
 			self.lblNewFileName.SetValue("")
 
-	def HandleTextModification(self,ctrl):
+	def HandleTextModification(self,ctrl=None):
 		num = self.txtNumCtrl.GetValue()
 		edition = self.txtEditionCtrl.GetValue()
 		dt=self.txtDateCtrl.GetValue()
@@ -155,7 +158,7 @@ class FileNaming(FileNamingDlg):
 		self.txtNamePartCtrl.SetValue(fn)
 		self.lblExt.SetLabel(ext)
 
-		self.HandleTextModification(None)
+		self.HandleTextModification()
 		#self.DuplicateName()
 
 
@@ -178,7 +181,8 @@ class FileNaming(FileNamingDlg):
 		( wx.ACCEL_CTRL, ord('s'), ID_SAVE),
 		( wx.ACCEL_CTRL, ord('o'), ID_OPEN),
 		( wx.ACCEL_CTRL, ord('l'), ID_CLEAN),
-		( wx.ACCEL_CTRL, ord('i'), ID_FORMAT_NUM)
+		( wx.ACCEL_CTRL, ord('i'), ID_FORMAT_NUM),
+		( wx.ACCEL_CTRL, ord('.'), ID_DOTIFY)
 		]
 
 		acc_table = wx.AcceleratorTable( acc_list )
@@ -192,7 +196,7 @@ class FileNaming(FileNamingDlg):
 		self.Bind(wx.EVT_MENU, self.evt_open, id=ID_OPEN)
 		self.Bind(wx.EVT_MENU, self.evt_delete, id=ID_CLEAN)
 		self.Bind(wx.EVT_MENU, self.evt_format_num, id=ID_FORMAT_NUM)
-
+		self.Bind(wx.EVT_MENU, self.evt_dotify, id=ID_DOTIFY)
 
 	def SaveFile(self):
 		oldName = ""
@@ -209,6 +213,9 @@ class FileNaming(FileNamingDlg):
 			logging.debug("Renaming: %s -> %s",oldName,newName)
 
 			os.rename(oldName,newName)
+
+			#update the file into the list so that it can be changed/opened again if needed
+			self.FileList[self.CurrentFileIndex] = newName
 
 		except Exception as ex:
 			logging.error("Error in renaming File.. %s to %s\n %s",oldName, newName, str(ex))
@@ -239,6 +246,51 @@ class FileNaming(FileNamingDlg):
 		else :
 			logging.debug("Opened File successfully.. %s ",fileName)
 
+
+	def FormatFileName(self):
+		global g_elem_lines
+		fn = self.txtNamePartCtrl.GetValue()
+
+		s = fn
+		#eliminate strings
+		for es in g_elem_lines:
+			s = s.replace(es," ")
+
+		#remove special characters
+		#TODO need to find a  better replacement alternative
+		UW_LST = ",[](){}*_"
+
+		for unwanted in UW_LST:
+			s  = s.replace(unwanted," ")
+
+		logging.debug("String after unwanted removal %s",s)
+
+		s = s.strip()
+		s = s.replace("  "," ")
+		s = s.replace("- ","-")
+		s = s.replace(" -","-")
+		s = s.replace(" .",".")
+		s = s.replace(". ",".")
+
+		logging.debug("String after space related changes %s",s)
+
+		s = s.strip("-.,_")
+		s = s.title()
+
+		self.txtNamePartCtrl.SetValue(s)
+		self.HandleTextModification()
+
+	def DotifyFileName(self):
+		fn = self.txtNamePartCtrl.GetValue()
+		s = fn
+
+		s = s.replace(" ",".")
+
+		logging.debug("String after space dotify %s",s)
+
+		self.txtNamePartCtrl.SetValue(s)
+		self.HandleTextModification()
+
 	def evt_next(self,id):
 		logging.debug("need to go next ")
 
@@ -259,7 +311,11 @@ class FileNaming(FileNamingDlg):
 
 	def evt_format(self,id):
 		logging.debug("need to format ")
-		pass
+		self.FormatFileName()
+
+	def evt_dotify(self,id):
+		logging.debug("need to dotify ")
+		self.DotifyFileName()
 
 	def evt_dup(self,id):
 		logging.debug("need to duplicate ")
@@ -322,13 +378,31 @@ def guiMain():
 
 	return
 
+def LoadElemStrings():
+
+	global g_elem_lines
+	fn = os.path.join(os.path.dirname(os.path.realpath(__file__)),ELIM_CONF_FILE)
+	if not os.path.exists(fn) :
+		return
+
+	fi = open(fn, 'r')
+	g_elem_lines = fi.readlines()
+	fi.close()
+
+	for i in range(0,len(g_elem_lines)):
+		g_elem_lines[i] = g_elem_lines[i].strip()
+
 def main():
 
-	logging.debug("temp director = %s",TEMP_DIR)
+	TEMP_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),TEMP_DIR_EXT)
+
+	logging.debug("temp directory = %s",TEMP_DIR)
 
 	if not os.path.exists(TEMP_DIR) :
 		logging.info("Creating temp directory %s",TEMP_DIR)
 		os.mkdir(TEMP_DIR)
+
+	LoadElemStrings()
 
 	guiMain()
 
