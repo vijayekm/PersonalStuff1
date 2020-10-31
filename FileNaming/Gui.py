@@ -119,6 +119,10 @@ class FileNamingDlg ( wx.Dialog ):
 		# Connect Events
 		self.m_btnOpenDir.Bind( wx.EVT_BUTTON, self.m_btnOpenDirOnButtonClick )
 		self.m_btnCollectFiles.Bind( wx.EVT_BUTTON, self.m_btnCollectFilesOnButtonClick )
+		self.txtNumCtrl.Bind( wx.EVT_TEXT, self.HandleTextModification )
+		self.txtNamePartCtrl.Bind( wx.EVT_TEXT, self.HandleTextModification )
+		self.txtEditionCtrl.Bind( wx.EVT_TEXT, self.HandleTextModification )
+		self.txtDateCtrl.Bind( wx.EVT_TEXT, self.HandleTextModification )
 
 	def __del__( self ):
 		pass
@@ -130,5 +134,11 @@ class FileNamingDlg ( wx.Dialog ):
 
 	def m_btnCollectFilesOnButtonClick( self, event ):
 		event.Skip()
+
+	def HandleTextModification( self, event ):
+		event.Skip()
+
+
+
 
 

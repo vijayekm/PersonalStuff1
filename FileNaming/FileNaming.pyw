@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 import sys
 import os
+import shutil
 
 from Gui import FileNamingDlg
 
@@ -21,11 +22,23 @@ ID_FORMAT_NUM  = 8
 
 DEFAULT_DIR = "C:\\COL\\"
 
+
+TEMP_DIR_EXT="tmp_1"
+TEMP_DIR=TEMP_DIR_EXT
+
 format = "%(asctime)s: %(message)s"
 LOG_FILENAME = sys.argv[0] + datetime.now().strftime('_%H_%M_%S_%d_%m_%Y.log')
 #logging.basicConfig(filename=LOG_FILENAME,format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
 logging.basicConfig(format=format, level=logging.DEBUG, datefmt="%H:%M:%S")
+
+
+TEMP_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),TEMP_DIR_EXT)
+
+
+class FNException(Exception):
+	def __init__(self,msg):
+		self.msg = msg
 
 def CollectFileNames(p_strDirName):
 	ret = []
@@ -62,6 +75,11 @@ class FileNaming(FileNamingDlg):
 		self.treeDirCtrl.SetPath(self.m_theDir)
 		self.treeDirCtrl.ExpandPath(self.m_theDir)
 
+		self.ParentDirName =""
+		self.FileList = []
+		self.CurrentFileIndex = -1
+
+
 	def resetFileSetProcessing(self):
 		self.ParentDirName =""
 		self.FileList = []
@@ -91,6 +109,37 @@ class FileNaming(FileNamingDlg):
 		if self.lblNewFileName :
 			self.lblNewFileName.SetValue("")
 
+	def HandleTextModification(self,ctrl):
+		num = self.txtNumCtrl.GetValue()
+		edition = self.txtEditionCtrl.GetValue()
+		dt=self.txtDateCtrl.GetValue()
+
+		newName = ""
+
+		newName+= num+"-" if len(num) > 0 else ""
+		newName+= self.txtNamePartCtrl.GetValue()
+
+		newName+= "-Edition-"+edition if len(edition) > 0 else ""
+		newName+= "-"+dt if len(dt) > 0 else ""
+
+		newName+= self.lblExt.GetLabel()
+
+		logging.debug("Modified file name = %s",newName)
+
+		self.lblNewFileName.SetValue(newName)
+
+
+	def DuplicateName(self):
+		if self.txtFileNameCtrl.GetValue()==None or len(self.txtFileNameCtrl.GetValue() ) == 0 :
+			return
+
+		fileName = self.txtFileNameCtrl.GetValue()
+
+		fn,ext = os.path.splitext(fileName)
+
+		logging.debug("fileNamewithoutExt = %s | ext = %s",fn, ext)
+		self.txtNamePartCtrl.SetValue(fn)
+
 	def UpdateControls(self):
 		self.CleanControls()
 		filePath = self.FileList[self.CurrentFileIndex]
@@ -102,11 +151,12 @@ class FileNaming(FileNamingDlg):
 		fileName = os.path.basename(filePath)
 		fn,ext = os.path.splitext(fileName)
 
-		self.txtFileNameCtrl.SetValue(fn)
+		self.txtFileNameCtrl.SetValue(fileName)
+		self.txtNamePartCtrl.SetValue(fn)
 		self.lblExt.SetLabel(ext)
 
-##		HandleTextModification()
-##		DuplicateName()
+		self.HandleTextModification(None)
+		#self.DuplicateName()
 
 
 	def ModFont(self):
@@ -143,12 +193,60 @@ class FileNaming(FileNamingDlg):
 		self.Bind(wx.EVT_MENU, self.evt_delete, id=ID_CLEAN)
 		self.Bind(wx.EVT_MENU, self.evt_format_num, id=ID_FORMAT_NUM)
 
+
+	def SaveFile(self):
+		oldName = ""
+		newName =""
+		try:
+			if(self.CurrentFileIndex < 0 or self.CurrentFileIndex > len(self.FileList) ) :
+				logging.error("invalide List location..%d",self.CurrentFileIndex)
+				raise FNException("Invalid current index " +str(self.CurrentFileIndex))
+
+			oldName = self.FileList[self.CurrentFileIndex]
+			olddir = os.path.dirname(oldName)
+			newName = olddir + os.sep + self.lblNewFileName.GetValue()
+
+			logging.debug("Renaming: %s -> %s",oldName,newName)
+
+			os.rename(oldName,newName)
+
+		except Exception as ex:
+			logging.error("Error in renaming File.. %s to %s\n %s",oldName, newName, str(ex))
+		else :
+			logging.debug("Success in renaming File.. %s to %s",oldName, newName)
+
+	def OpenFile(self):
+		fileName = ""
+		try:
+			if(self.CurrentFileIndex < 0 or self.CurrentFileIndex > len(self.FileList) ) :
+				logging.error("invalide List location..%d",self.CurrentFileIndex)
+				raise FNException("Invalid current index " +str(self.CurrentFileIndex))
+
+			filePath = self.FileList[self.CurrentFileIndex]
+
+
+			fileName = os.path.basename( filePath )
+			dstFilePath = os.path.join(TEMP_DIR,fileName)
+			shutil.copy(filePath,dstFilePath)
+
+			#cmd = 'start "{0}"'.format(dstFilePath)
+			cmd = '"{0}"'.format(dstFilePath)
+			logging.debug("Executing Command = %s",cmd)
+			os.system(cmd)
+
+		except Exception as ex:
+			logging.error("Error in Opening File.. %s \n %s",fileName, str(ex))
+		else :
+			logging.debug("Opened File successfully.. %s ",fileName)
+
 	def evt_next(self,id):
 		logging.debug("need to go next ")
 
 		if self.CurrentFileIndex +1 < len(self.FileList):
 			self.CurrentFileIndex +=1
 			self.UpdateControls()
+		else :
+			logging.debug("reached last")
 
 	def evt_prev(self,id):
 		logging.debug("need to go prev")
@@ -156,6 +254,8 @@ class FileNaming(FileNamingDlg):
 		if self.CurrentFileIndex > 0 :
 			self.CurrentFileIndex -=1
 			self.UpdateControls()
+		else:
+			logging.debug("reached first")
 
 	def evt_format(self,id):
 		logging.debug("need to format ")
@@ -167,10 +267,12 @@ class FileNaming(FileNamingDlg):
 
 	def evt_save(self,id):
 		logging.debug("need to save ")
+		self.SaveFile()
 		pass
 
 	def evt_open(self,id):
 		logging.debug("need to open ")
+		self.OpenFile();
 		pass
 
 	def evt_delete(self,id):
@@ -220,4 +322,14 @@ def guiMain():
 
 	return
 
-guiMain()
+def main():
+
+	logging.debug("temp director = %s",TEMP_DIR)
+
+	if not os.path.exists(TEMP_DIR) :
+		logging.info("Creating temp directory %s",TEMP_DIR)
+		os.mkdir(TEMP_DIR)
+
+	guiMain()
+
+main()
