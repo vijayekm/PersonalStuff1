@@ -20,6 +20,7 @@ ID_OPEN	 = 6
 ID_CLEAN   = 7
 ID_FORMAT_NUM  = 8
 ID_DOTIFY = 9
+ID_SPACIFY = 10
 
 DEFAULT_DIR = "C:\\COL\\"
 
@@ -182,7 +183,9 @@ class FileNaming(FileNamingDlg):
 		( wx.ACCEL_CTRL, ord('o'), ID_OPEN),
 		( wx.ACCEL_CTRL, ord('l'), ID_CLEAN),
 		( wx.ACCEL_CTRL, ord('i'), ID_FORMAT_NUM),
-		( wx.ACCEL_CTRL, ord('.'), ID_DOTIFY)
+		( wx.ACCEL_CTRL, ord('.'), ID_DOTIFY),
+		( wx.ACCEL_CTRL, ord(' '), ID_SPACIFY)
+
 		]
 
 		acc_table = wx.AcceleratorTable( acc_list )
@@ -197,6 +200,8 @@ class FileNaming(FileNamingDlg):
 		self.Bind(wx.EVT_MENU, self.evt_delete, id=ID_CLEAN)
 		self.Bind(wx.EVT_MENU, self.evt_format_num, id=ID_FORMAT_NUM)
 		self.Bind(wx.EVT_MENU, self.evt_dotify, id=ID_DOTIFY)
+		self.Bind(wx.EVT_MENU, self.evt_spacify, id=ID_SPACIFY)
+
 
 	def SaveFile(self):
 		oldName = ""
@@ -291,6 +296,17 @@ class FileNaming(FileNamingDlg):
 		self.txtNamePartCtrl.SetValue(s)
 		self.HandleTextModification()
 
+	def SpacifyFileName(self):
+		fn = self.txtNamePartCtrl.GetValue()
+		s = fn
+
+		s = s.replace("."," ")
+
+		logging.debug("String after dot spacify %s",s)
+
+		self.txtNamePartCtrl.SetValue(s)
+		self.HandleTextModification()
+
 	def evt_next(self,id):
 		logging.debug("need to go next ")
 
@@ -316,6 +332,10 @@ class FileNaming(FileNamingDlg):
 	def evt_dotify(self,id):
 		logging.debug("need to dotify ")
 		self.DotifyFileName()
+
+	def evt_spacify(self,id):
+		logging.debug("need to spacify ")
+		self.SpacifyFileName()
 
 	def evt_dup(self,id):
 		logging.debug("need to duplicate ")
