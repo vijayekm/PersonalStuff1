@@ -307,6 +307,30 @@ class FileNaming(FileNamingDlg):
 		self.txtNamePartCtrl.SetValue(s)
 		self.HandleTextModification()
 
+	def CleanupTempDir(self,p_strDirName):
+
+		dlg = wx.MessageDialog(self, "Do you want to cleanup tmp dir ?", "Confirmation", wx.YES_NO)
+
+		if dlg.ShowModal() != wx.ID_YES :
+			logging.debug("Cleaning Dir : user aborted")
+			return
+
+		logging.debug("Cleaning Dir : %s",p_strDirName)
+
+		for subdir, dirs, files in os.walk(p_strDirName):
+			for filename in files:
+				if filename == '.' or filename == '..' :
+					continue
+
+				fullFileName = os.path.join(subdir,filename)
+
+				if os.path.isdir(fullFileName):
+					continue
+
+				logging.debug("Deleting File : %s",fullFileName)
+				os.remove(fullFileName)
+
+
 	def evt_next(self,id):
 		logging.debug("need to go next ")
 
@@ -353,7 +377,8 @@ class FileNaming(FileNamingDlg):
 
 	def evt_delete(self,id):
 		logging.debug("need to delete ")
-		pass
+		self.CleanupTempDir(TEMP_DIR)
+
 
 	def evt_format_num(self,id):
 		logging.debug("need to format num ")
