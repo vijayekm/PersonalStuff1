@@ -6,6 +6,7 @@ import sys
 import os
 import shutil
 import re
+import time
 
 from Gui import FileNamingDlg
 
@@ -22,6 +23,7 @@ ID_CLEAN   = 7
 ID_FORMAT_NUM  = 8
 ID_DOTIFY = 9
 ID_SPACIFY = 10
+ID_DO_ALL=11
 
 DEFAULT_DIR = "C:\\COL\\"
 
@@ -32,7 +34,8 @@ TEMP_DIR=TEMP_DIR_EXT
 ELIM_CONF_FILE="strelem.conf"
 g_elem_lines = []
 
-format = "%(asctime)s: %(message)s"
+#format = "%(asctime)s: %(message)s"
+format = "%(asctime)s:[%(filename)s:%(lineno)s-%(funcName)15s()] %(message)s"
 LOG_FILENAME = sys.argv[0] + datetime.now().strftime('_%H_%M_%S_%d_%m_%Y.log')
 #logging.basicConfig(filename=LOG_FILENAME,format=format, level=logging.INFO, datefmt="%H:%M:%S")
 
@@ -234,6 +237,57 @@ class FileNaming(FileNamingDlg):
 		self.HandleTextModification()
 		#self.DuplicateName()
 
+	def FillDefaults(self):
+		"""
+		This fills the defaults for the date and num fields if they are empty
+		The num field is set with 1234567891234
+		The date field is filled with 9999
+		"""
+		num_def = "1234567891234"
+		dt_def = "9999"
+
+		num = self.txtNumCtrl.GetValue()
+		dt = self.txtDateCtrl.GetValue()
+
+		if len(num) < 1:
+			self.txtNumCtrl.SetValue(num_def)
+
+		if len(dt) < 1 :
+			self.txtDateCtrl.SetValue(dt_def)
+
+		self.HandleTextModification()
+
+	def DoAllFiles(self):
+		if len(self.FileList) < 1:
+			logging.info("File list is empty..")
+			return
+
+		self.CurrentFileIndex =-1
+
+		dlg = wx.MessageDialog(self, "Do you want to Format all files ?", "Confirmation", wx.YES_NO)
+
+		if dlg.ShowModal() != wx.ID_YES :
+			logging.debug("user aborted")
+			return
+
+		logging.info("Start processing the File list..")
+
+		while self.DoNext():
+			self.FormatFileName()
+			wx.Yield()
+			self.FillDefaults()
+			wx.Yield()
+			self.DotifyFileName()
+			wx.Yield()
+			self.SaveFile()
+			wx.Yield()
+			time.sleep(3)
+
+		logging.info("Completed processing the File list..")
+
+		dlg = wx.MessageDialog(self, "Completed processing the File list", "Complete")
+		dlg.ShowModal()
+
 
 	def ModFont(self):
 		logging.debug("Mod font...")
@@ -247,14 +301,15 @@ class FileNaming(FileNamingDlg):
 	def SetupAccelerators(self):
 
 		acc_list = [
-		( wx.ACCEL_CTRL, ord('n'), ID_NEXT ),
-		( wx.ACCEL_CTRL, ord('p'), ID_PREV ),
-		( wx.ACCEL_CTRL, ord('f'), ID_FORMAT),
 		( wx.ACCEL_CTRL, ord('d'), ID_DUP),
-		( wx.ACCEL_CTRL, ord('s'), ID_SAVE),
-		( wx.ACCEL_CTRL, ord('o'), ID_OPEN),
-		( wx.ACCEL_CTRL, ord('l'), ID_CLEAN),
+		( wx.ACCEL_CTRL, ord('f'), ID_FORMAT),
+		( wx.ACCEL_CTRL, ord('g'), ID_DO_ALL),
 		( wx.ACCEL_CTRL, ord('i'), ID_FORMAT_NUM),
+		( wx.ACCEL_CTRL, ord('l'), ID_CLEAN),
+		( wx.ACCEL_CTRL, ord('n'), ID_NEXT ),
+		( wx.ACCEL_CTRL, ord('o'), ID_OPEN),
+		( wx.ACCEL_CTRL, ord('p'), ID_PREV ),
+		( wx.ACCEL_CTRL, ord('s'), ID_SAVE),
 		( wx.ACCEL_CTRL, ord('.'), ID_DOTIFY),
 		( wx.ACCEL_CTRL, ord(' '), ID_SPACIFY)
 
@@ -273,7 +328,7 @@ class FileNaming(FileNamingDlg):
 		self.Bind(wx.EVT_MENU, self.evt_format_num, id=ID_FORMAT_NUM)
 		self.Bind(wx.EVT_MENU, self.evt_dotify, id=ID_DOTIFY)
 		self.Bind(wx.EVT_MENU, self.evt_spacify, id=ID_SPACIFY)
-
+		self.Bind(wx.EVT_MENU, self.evt_do_all, id=ID_DO_ALL)
 
 	def SaveFile(self):
 		oldName = ""
@@ -287,8 +342,11 @@ class FileNaming(FileNamingDlg):
 			olddir = os.path.dirname(oldName)
 			newName = olddir + os.sep + self.lblNewFileName.GetValue()
 
-			logging.debug("Renaming: %s -> %s",oldName,newName)
+			if(oldName == newName) :
+				logging.debug("Not renaming since Old and new files names same %s -> %s",oldName,newName)
+				return
 
+			logging.debug("Renaming: %s -> %s",oldName,newName)
 			os.rename(oldName,newName)
 
 			#update the file into the list so that it can be changed/opened again if needed
@@ -352,7 +410,10 @@ class FileNaming(FileNamingDlg):
 		logging.debug("String after space related changes %s",s)
 
 		s = s.strip("-.,_")
-		s = s.title()
+
+		s = s.title() #it does camel casing of the text
+
+		s = s.replace("'S","'s") # camel casing sometimes converts india's to India'S - hence reverting
 
 		self.txtNamePartCtrl.SetValue(s)
 		self.HandleTextModification()
@@ -402,24 +463,31 @@ class FileNaming(FileNamingDlg):
 				logging.debug("Deleting File : %s",fullFileName)
 				os.remove(fullFileName)
 
-
-	def evt_next(self,id):
-		logging.debug("need to go next ")
-
+	def DoNext(self):
 		if self.CurrentFileIndex +1 < len(self.FileList):
 			self.CurrentFileIndex +=1
 			self.UpdateControls()
+			return True
 		else :
 			logging.debug("reached last")
+		return False
+
+	def DoPrev(self):
+		if self.CurrentFileIndex > 0 :
+			self.CurrentFileIndex -=1
+			self.UpdateControls()
+			return True
+		else:
+			logging.debug("reached first")
+		return False
+
+	def evt_next(self,id):
+		logging.debug("need to go next ")
+		self.DoNext()
 
 	def evt_prev(self,id):
 		logging.debug("need to go prev")
 
-		if self.CurrentFileIndex > 0 :
-			self.CurrentFileIndex -=1
-			self.UpdateControls()
-		else:
-			logging.debug("reached first")
 
 	def evt_format(self,id):
 		logging.debug("need to format ")
@@ -432,6 +500,10 @@ class FileNaming(FileNamingDlg):
 	def evt_spacify(self,id):
 		logging.debug("need to spacify ")
 		self.SpacifyFileName()
+
+	def evt_do_all(self,id):
+		logging.debug("need to do all")
+		self.DoAllFiles()
 
 	def evt_dup(self,id):
 		logging.debug("need to duplicate ")
