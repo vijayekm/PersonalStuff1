@@ -5,6 +5,7 @@ import logging
 import sys
 import os
 import shutil
+import re
 
 from Gui import FileNamingDlg
 
@@ -162,10 +163,40 @@ class FileNaming(FileNamingDlg):
 				3.4 the postion of the string should be after the edition details
 		"""
 
+		#set to defaults
 		num=None
 		name=fn
 		edition=None
 		dt=None
+
+
+		"""
+		For now only extract the num and year
+		[ -][0-9]{4}$ is the regex for year
+		^[0-9]+ is the regex for num
+		"""
+		NUM_PAT = "^(?P<num>[0-9]+)"
+		YEAR_PRE_PAT="[ -.]"
+		YEAR_PAT= YEAR_PRE_PAT+"(?P<yr>[0-9]{4})$"
+
+		#check and extract number part
+		num_match = re.search(NUM_PAT,fn)
+		if num_match:
+			#found the number part
+			num = num_match.group("num")
+			fn = re.sub(NUM_PAT,"",fn)
+			logging.debug("After extraction of number = %s name %s", num,fn)
+
+		#check and extract year part
+		yr_match = re.search(YEAR_PAT,fn)
+		if yr_match:
+			#found the year part
+			yr = yr_match.group("yr")
+			fn = re.sub(YEAR_PAT,"",fn)
+			dt = yr
+			logging.debug("After extraction of date = %s name %s", dt,fn)
+
+		name = fn
 		return num,name,edition,dt
 
 	def ExtractDetailsFromFileNameAndUpdate(self,fn=None):
