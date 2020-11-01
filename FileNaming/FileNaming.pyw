@@ -144,6 +144,46 @@ class FileNaming(FileNamingDlg):
 		logging.debug("fileNamewithoutExt = %s | ext = %s",fn, ext)
 		self.txtNamePartCtrl.SetValue(fn)
 
+	def ExtractDetailsFromFileName(self,fn):
+		"""
+		TODO
+		The expected format is number-name-edition-enum-date
+		The date could be
+			1) having year-month-dayOfMonth
+			2) having only year-month
+			3) having only year
+		logic for extractaion
+			1) first check if the edition details are there and if yes extract
+			2) initial set of digits constitute the number, extract them
+			3) last set of digits is the date = year-mm-dayOfMonth
+				3.1 first check for full date format
+				3.2 next check for only year and month
+				3.3 next check for only year
+				3.4 the postion of the string should be after the edition details
+		"""
+
+		num=None
+		name=fn
+		edition=None
+		dt=None
+		return num,name,edition,dt
+
+	def ExtractDetailsFromFileNameAndUpdate(self,fn=None):
+
+		if not fn :
+			fn = self.txtNamePartCtrl.GetValue()
+
+		num,name,edition,dt = self.ExtractDetailsFromFileName(fn)
+
+		if name:
+			self.txtNamePartCtrl.SetValue(name)
+		if num :
+			self.txtNumCtrl.SetValue(num)
+		if edition:
+			self.txtEditionCtrl.SetValue(edition)
+		if dt:
+			self.txtDateCtrl.SetValue(dt)
+
 	def UpdateControls(self):
 		self.CleanControls()
 		filePath = self.FileList[self.CurrentFileIndex]
@@ -155,8 +195,9 @@ class FileNaming(FileNamingDlg):
 		fileName = os.path.basename(filePath)
 		fn,ext = os.path.splitext(fileName)
 
+		self.ExtractDetailsFromFileNameAndUpdate(fn)
+
 		self.txtFileNameCtrl.SetValue(fileName)
-		self.txtNamePartCtrl.SetValue(fn)
 		self.lblExt.SetLabel(ext)
 
 		self.HandleTextModification()
