@@ -200,6 +200,14 @@ class FileNaming(FileNamingDlg):
 			logging.debug("After extraction of date = %s name %s", dt,fn)
 
 		name = fn
+		"""
+		After num extraction the name can possibly have the [. -_] as prefix.
+		For now remove the "-"
+		TODO handle the other chars also
+		"""
+		if name[0] == '-':
+			name = name[1:]
+
 		return num,name,edition,dt
 
 	def ExtractDetailsFromFileNameAndUpdate(self,fn=None):
@@ -487,6 +495,7 @@ class FileNaming(FileNamingDlg):
 
 	def evt_prev(self,id):
 		logging.debug("need to go prev")
+		self.DoPrev()
 
 
 	def evt_format(self,id):
