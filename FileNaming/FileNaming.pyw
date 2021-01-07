@@ -426,6 +426,16 @@ class FileNaming(FileNamingDlg):
 		self.txtNamePartCtrl.SetValue(s)
 		self.HandleTextModification()
 
+	def FormatFileNumber(self):
+		global g_elem_lines
+		num = self.txtNumCtrl.GetValue()
+		numeric_filter = filter(str.isdigit, num)
+		numeric_string = "".join(numeric_filter)
+
+		self.txtNumCtrl.SetValue(numeric_string)
+
+		self.HandleTextModification()
+
 	def DotifyFileName(self):
 		fn = self.txtNamePartCtrl.GetValue()
 		s = fn
@@ -535,6 +545,7 @@ class FileNaming(FileNamingDlg):
 
 	def evt_format_num(self,id):
 		logging.debug("need to format num ")
+		self.FormatFileNumber()
 		pass
 
 	def m_btnOpenDirOnButtonClick( self, event ):
