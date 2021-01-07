@@ -382,7 +382,8 @@ class FileNaming(FileNamingDlg):
 			#cmd = 'start "{0}"'.format(dstFilePath)
 			cmd = '"{0}"'.format(dstFilePath)
 			logging.debug("Executing Command = %s",cmd)
-			os.system(cmd)
+			#os.system(cmd)
+			os.startfile(cmd)
 
 		except Exception as ex:
 			logging.error("Error in Opening File.. %s \n %s",fileName, str(ex))
