@@ -17,8 +17,8 @@ import wx.xrc
 class FileNamingDlg ( wx.Dialog ):
 
 	def __init__( self, parent ):
-		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"FileNaming", pos = wx.DefaultPosition, size = wx.Size( 1034,598 ), style = wx.DEFAULT_DIALOG_STYLE )
-
+		wx.Dialog.__init__ ( self, parent, id = wx.ID_ANY, title = u"FileNaming", pos = wx.DefaultPosition, size = wx.Size( 1234,698 ), style = wx.DEFAULT_DIALOG_STYLE )
+		self.ModFont()
 		self.SetSizeHints( wx.DefaultSize, wx.DefaultSize )
 
 		TopVertical = wx.BoxSizer( wx.HORIZONTAL )
@@ -94,7 +94,7 @@ class FileNamingDlg ( wx.Dialog ):
 		self.txtDateCtrl = wx.TextCtrl( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		RightSideHorizontal.Add( self.txtDateCtrl, 0, wx.ALL|wx.EXPAND, 5 )
 
-		self.lblExt = wx.StaticText( self, wx.ID_ANY, u"MyLabel", wx.DefaultPosition, wx.DefaultSize, 0 )
+		self.lblExt = wx.StaticText( self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.DefaultSize, 0 )
 		self.lblExt.Wrap( -1 )
 
 		RightSideHorizontal.Add( self.lblExt, 0, wx.ALL, 5 )

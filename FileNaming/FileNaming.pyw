@@ -302,7 +302,7 @@ class FileNaming(FileNamingDlg):
 
 		font = self.GetFont()
 		size = font.GetPointSize()
-		size = size*2
+		size = size*1.7
 		font.SetPointSize(size)
 		self.SetFont(font)
 
